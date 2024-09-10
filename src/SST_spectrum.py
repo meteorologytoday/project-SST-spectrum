@@ -19,12 +19,11 @@ parser = argparse.ArgumentParser(
 )
 
 parser.add_argument('--dataset', type=str, help='Input file', required=True)
-parser.add_argument('--input-dir', type=str, help='Input file', required=True)
-parser.add_argument('--output-dir', type=str, help='Input file', required=True)
 parser.add_argument('--date-rng', type=str, nargs=2, help='Time range in Pentad', required=True)
 parser.add_argument('--lat-rng', type=float, nargs=2, help='The lat axis range to be plot in km.', default=[None, None])
 parser.add_argument('--lon-rng', type=float, nargs=2, help='The lon axis range to be plot in km.', default=[None, None])
 parser.add_argument('--spectral-dir', type=str, help='The direction to do fft. Can be `lat` or `lon`.', choice=['lat', 'lon'])
+parser.add_argument('--nproc', type=int, help='The lon axis range to be plot in km.',)
 
 args = parser.parse_args()
 print(args)
@@ -58,8 +57,6 @@ def work(
         "lat_rng",
         "lon_rng",
         "dataset",
-        "year",
-        "pentad",
         "phase",
         "tp",
         "spectral_dir",
@@ -70,7 +67,6 @@ def work(
     result = dict(
         tp = tp,
         need_work = False,
-        output_filename=output_filename,
         status='UNKNOWN',
     )
 
@@ -84,6 +80,7 @@ def work(
             data_loader.getFilename(dataset, "spectral", tp) 
         )
 
+        result["output_full_filename"] = output_full_filename
 
         if phase == "detect":
             
@@ -126,7 +123,7 @@ def work(
 
             dft_coe, wvlens = fft_analysis(da_numpy, dx)
             
-            data_vars["%s_dftcoe" % (varname,)] = ( ["time", "wavenumber", "complex"], dft_coe )
+            data_vars["%s_dftcoe" % (varname,)] = ( ["time", "wvlens", "complex"], dft_coe )
             
         
         data_vars["time_bnd"] = ds["time_bnd"]
@@ -135,7 +132,7 @@ def work(
             data_vars=data_vars,
             coords=dict(
                 time = ds.coords['time'],
-                wavenumber = (["wavenumber",] , )
+                wavenumber = (["wvlen",] , wvlens),
                 comoplex = ["real", "imag"],
             ),
             attrs=dict(description="Spectral data"),
@@ -159,62 +156,38 @@ def work(
     return result
 
 
+input_args = []
+for tp in TimePentad.pentad_range(args.date_rng[0], args.date_rng[1]):
 
-
-
-for i in range(number_of_output_files):
-
-    reltime_rngs = []
-        
-    reltime_beg_of_file = reltime_beg + i * time_interval_per_file
-    time_beg_of_file = exp_beg_time + reltime_beg_of_file
-
-    for j in range(args.output_count):
-        
-        reltime_rngs.append(
-            [ 
-                reltime_beg_of_file + j     * time_avg_interval,
-                reltime_beg_of_file + (j+1) * time_avg_interval,
-            ]
-        )
-
-    filename = os.path.join(
-        args.output_dir,
-        "analysis_{timestr:s}.nc".format(
-            timestr = time_beg_of_file.strftime("%Y-%m-%d_%H:%M:%S"),
-        )
+    details = dict(
+        lat_rng = args.lat_rng,
+        lon_rng = args.lon_rng,
+        dataset = args.dataset,
+        tp = tp,
+        spectral_dir = args.spectral_dir,
     )
 
-    if os.path.exists(filename):
-        print("File %s already exists. Skip it." % (filename,))
-        continue
+    details["phase"] = "detect"
 
-   
-    input_args.append(
-        (
-            args.input_dir,
-            args.input_dir_base,
-            filename,
-            args.exp_beg_time,
-            args.wrfout_data_interval,
-            args.frames_per_wrfout_file,
-            reltime_rngs,
-            avg_before_analysis,
-            args.analysis_style,
+    test = work(details)
+
+    if test["need_work"]:
+        input_args.append(
+            ( details, )
         )
-    )
-
+    else:
+        print("Output file `%s` already exists. Skip." % (test["output_filename"],))
 
 
 failed_files = []
 with Pool(processes=args.nproc) as pool:
 
-    results = pool.starmap(genAnalysis, input_args)
+    results = pool.starmap(work, input_args)
 
     for i, result in enumerate(results):
         if result['status'] != 'OK':
-            print('!!! Failed to generate output : %s.' % (result['output_filename'],))
-            failed_files.append(result['output_filename'])
+            print('!!! Failed to generate output : %s.' % (result['output_full_filename'],))
+            failed_files.append(result['output_full_filename'])
 
 
 print("Tasks finished.")
