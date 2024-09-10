@@ -5,6 +5,7 @@
 *.swp
 *.png
 *.tmp
+*.md5
 data/*
 data????????/*
 */__pycache__/*

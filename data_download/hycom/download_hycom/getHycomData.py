@@ -25,7 +25,7 @@ parser.add_argument('--lat-rng', type=float, nargs=2, default=[-90, 90])
 parser.add_argument('--lon-rng', type=float, nargs=2, default=[0, 360])
 parser.add_argument('--output-dir', type=str, default="downloaded_hycom_data")
 parser.add_argument('--output-formats', type=str, nargs='+', default=["netcdf"], choices=["netcdf", "mat"])
-parser.add_argument('--varnames', type=str, nargs='+', default=['water_u', 'water_v', 'water_temp', 'salinity', 'surf_el'], choices=['water_u', 'water_v', 'water_temp', 'salinity', 'surf_el'])
+parser.add_argument('--varnames', type=str, nargs='+', default=['water_u', 'water_v', 'water_temp', 'salinity', 'surf_el'], choices=['water_u', 'water_v', 'water_temp', 'salinity', 'surf_el', 'sst'])
 parser.add_argument('--nproc', type=int, default=1)
 
 args = parser.parse_args()
@@ -158,7 +158,7 @@ def work(dt, fmt_and_output_filename):
                 pulling_varname = varname
                 if varname == "sst":
                     indexer["depth"] = 0
-                    pulling_varname = 
+                    pulling_varname = "water_temp"
 
                 print("Pulling variable data %s from hycom %s " % (varname, pulling_varname))
 
