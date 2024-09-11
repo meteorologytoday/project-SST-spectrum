@@ -1,29 +1,72 @@
 import xarray as xr
 import pandas as pd
 import os
-import TimePentad as tp
+import PentadTools as ptt
 
 data_archive = "data"
 
-
-def getFilename(dataset, datatype, tp: TimePentad):
+def getFilenameFromYear(dataset, datatype, varname, year: int, label=""):
     
     if datatype not in ["physical", "spectral"]:
         raise Exception("Unknown datatype: %s" % (datatype,))
 
+    if datatype == "spectral":
+        if label == "":
+            raise Exception("Spectral data needs parameter `label`.")
+
     full_filename = os.path.join(
         data_archive,
         datatype,
-        "{dataset:s}_{year:04d}-{year:02d}.nc".format(
-            year = tp.year,
-            pentad = tp.pentad,
+        label,
+        varname,
+        dataset,
+        "{dataset:s}_{datatype:s}_{varname:s}_{year:04d}.nc".format(
+            dataset = dataset,
+            datatype = datatype,
+            varname = varname,
+            year = year,
         ),
     )
 
     return full_filename 
  
+def getFilenameFromTimePentad(dataset, datatype, varname, tp: ptt.TimePentad):
+   
+    return getFilenameFromYear(dataset, datatype, varname, tp.year) 
+ 
     
-def load_dataset(dataset, dt_beg, dt_end):
+def load_dataset(dataset, datatype, varname, tp_beg, tp_end, label="", inclusive="left"):
+
+    if dataset in ["ERA5", "oisst", ]:
+        
+        data_interval = pd.Timedelta(days=1)
+
+    else:
+
+        raise Exception("Unknown dataset: %s" % (dataset,))
+   
+    tp_beg = ptt.TimePentad(tp_beg)
+    tp_end = ptt.TimePentad(tp_end)
+ 
+    if tp_end < tp_beg:
+        raise Exception("tp_end = %s should be later than tp_beg = %s" % ( tp_beg, tp_end, ))
+    
+     
+    filenames = [
+        getFilenameFromYear(dataset, datatype, varname, year, label=label)
+        for year in range(tp_beg.year, tp_end.year+1)
+    ]
+    
+    sel_pentadstamps = [ tp.toPentadstamp() for tp in ptt.pentad_range(tp_beg, tp_end, inclusive=inclusive) ]
+    
+    ds = xr.open_mfdataset(filenames)
+    ds = ds.sel(pentadstamp = sel_pentadstamps)
+
+    return ds
+    
+    
+
+def __load_dataset(dataset, datatype, varname, year_beg, year_end, label=""):
 
     if dataset in ["ERA5", "oisst", ]:
         
@@ -33,18 +76,18 @@ def load_dataset(dataset, dt_beg, dt_end):
 
         raise Exception("Unknown dataset: %s" % (dataset,))
         
-    
 
-     
-    if dt_end is None:
-        
-        
+    filenames = [
+        getFilenameFromYear(dataset, datatype, varname, year, label=label)
+        for year in range(year_beg, year_end+1)
+    ]
 
-    
+    ds = xr.open_mfdataset(filenames)
 
     return ds
     
     
+
 
 
 

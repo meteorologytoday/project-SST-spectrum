@@ -34,8 +34,9 @@ class TimePentad:
         self.year = year
         self.pentad = pentad
 
-
-
+    def toPentadstamp(self):
+        return TimePentad2Pentads(self)
+        
     def __add__(self, dpd):
        
         return Pentads2TimePentad(
@@ -53,7 +54,27 @@ class TimePentad:
             return Pentads2TimePentad(
                 TimePentad2Pentads(self) + dpd.pentads
             )
+        else:
 
+            raise TypeError()
+
+    def __lt__(self, dt):
+        return (dt - self).toPentads() < 0
+
+    def __le__(self, dt):
+        return (dt - self).toPentads() <= 0
+
+    def __eq__(self, dt):
+        return (dt - self).toPentads() == 0
+
+    def __ne__(self, dt):
+        return (dt - self).toPentads() != 0
+
+    def __ge__(self, dt):
+        return (dt - self).toPentads() >= 0
+
+    def __gt__(self, dt):
+        return (dt - self).toPentads() > 0
 
     def __str__(self):
         return "%dP%02d" % (self.year, self.pentad)
@@ -87,12 +108,44 @@ class PentadDelta:
             pentads = int(pentad_split[1], base=10)
 
         
-        if pentads <= 0 or pentads > 72:
-            raise Exception("Pentads should be 0~72") 
-
         self.pentads = years * pentads_per_year + pentads
 
+    def toPentads(self):
+        return self.pentads
 
+
+    def __add__(self, dpd):
+
+        if type(dpd) == TimePentad:
+            return dpd + self
+
+        elif type(dt) == PentadDelta: 
+            return PentadDelta(pentads=self.pentads + dpd.pentads)
+
+        else:
+            raise TypeError()
+
+    def __sub__(self, dt):
+        return PentadDelta(pentads = self.pentads - dt.pentads)
+
+
+    def __lt__(self, dt):
+        return (dt - self).toPentads() < 0
+
+    def __le__(self, dt):
+        return (dt - self).toPentads() <= 0
+
+    def __eq__(self, dt):
+        return (dt - self).toPentads() == 0
+
+    def __ne__(self, dt):
+        return (dt - self).toPentads() != 0
+
+    def __ge__(self, dt):
+        return (dt - self).toPentads() >= 0
+
+    def __gt__(self, dt):
+        return (dt - self).toPentads() > 0
 
 
    
@@ -124,6 +177,13 @@ def Pentads2TimePentad(p: int):
     return TimePentad(
         year = p // pentads_per_year,
         pentad = p % pentads_per_year,
+    )
+
+
+def Pentads2PentadDelta(p: int):
+
+    return PentadDelta(
+        pentads = p,
     )
 
 

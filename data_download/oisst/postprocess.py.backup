@@ -1,0 +1,99 @@
+import numpy as np
+import xarray as xr
+import traceback
+import os
+import pathlib 
+import pandas as pd
+
+varnames = ["sst"]
+input_dir = "/home/t2hsu/SO2_t2hsu/project-SST-spectrum/data/sst_raw/oisst"
+input_file_fmt = "sst.day.mean.{year:04d}.nc"
+
+output_dir = "/home/t2hsu/SO2_t2hsu/project-SST-spectrum/data/sst/oisst"
+output_file_fmt = "oisst_{year:04d}-{pentad:02d}.nc"
+
+year_rng = [1982, 2023]
+days_per_pentad = 5
+pentads_per_year = 73
+
+print("Making output folder if not exists: ", output_dir)
+pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+for year in range(year_rng[0], year_rng[1]+1):
+
+    for pentad in range(pentads_per_year):
+    
+        print("Processing year-pentad = %04d-%02d" % (year, pentad))
+        
+        output_filename = output_file_fmt.format(
+            year = year,
+            pentad = pentad,
+        )
+
+        output_full_filename = os.path.join(output_dir, output_filename)
+
+        if os.path.exists(output_full_filename):
+            print("File %s already exists. Skip." % (output_full_filename,))
+
+            continue
+
+
+        input_filename = input_file_fmt.format(
+            year = year,
+        )
+
+        input_full_filename = os.path.join(input_dir, input_filename)
+
+        ds = xr.load_dataset(input_full_filename)
+        
+        # First, check if there are enough days
+        
+        t = ds.coords["time"]
+        beg_dt = pd.Timestamp(year=year, month=1, day=1) + pd.Timedelta(days=pentad * days_per_pentad)
+        end_dt = pd.Timestamp(year=year, month=1, day=1) + pd.Timedelta(days=(pentad+1) * days_per_pentad)
+        
+        selected_dt = pd.date_range(
+            beg_dt,
+            end_dt,
+            freq = "D",
+            inclusive="left",
+        )
+
+        ds = ds.sel(time=list(selected_dt))
+ 
+        Nt = 1
+        time = [ beg_dt, ]
+        
+        new_data = dict()
+        for varname in varnames:
+            d = np.zeros((Nt, ds.dims["lat"], ds.dims["lon"]))
+            da = ds[varname]
+            d[0, :, :] = da.mean(dim="time").to_numpy()
+
+            new_data[varname] = d
+
+        data_vars = {
+            varname : ( ["time", "lat", "lon"], new_data[varname] )
+            for varname in varnames
+        }
+     
+        new_ds = xr.Dataset(
+            data_vars=data_vars,
+            coords=dict(
+                time = ( ["time", ] , time),
+                lat=ds.coords["lat"],
+                lon=ds.coords["lon"],
+            ),
+            attrs=dict(description="Weather related data."),
+        )
+
+
+        print("Output: ", output_full_filename)
+        new_ds.to_netcdf(
+            output_full_filename,
+            unlimited_dims="time",
+            encoding={'time':{'units':'hours since 1970-01-01'}},
+        )
+
+
+

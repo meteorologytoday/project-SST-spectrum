@@ -1,8 +1,12 @@
 #!/bin/bash
 
+spectral_dir="lon"
+label="NPAC_spec-${spectral_dir}"
 
 python3 src/SST_spectrum.py \
     --dataset oisst \
-    --date-rng 2018P1 2018P5 \
-    --lat-rng 40 45 \
-    --lon-rng 150 210
+    --label $label \
+    --year-rng 1982 1982 \
+    --spectral-dir $spectral_dir \
+    --lat-rng 30 35  \
+    --lon-rng 150 230
