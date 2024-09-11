@@ -112,7 +112,15 @@ def work(
     _ax.plot(wvns, np.log(amp), "k-")
     _ax_twin.plot(wvns, variance_frac, "r--")
 
-    _ax.set_title("[%s] %s %s" % (label, str(tp_rng[0]), varname,) )
+    _ax.set_title("[%s] [%s] %s %s" % (args.dataset, label, str(tp_rng[0]), varname,) )
+    _ax.set_xlabel("Wavelength [ deg ]")
+    _ax.set_ylabel("Magnitude [ $  \\mathrm{K} $ ]")
+    _ax_twin.set_ylabel("Variance Fraction [ %% ]")
+    
+    #_ax.spines["right"].set_color('red')
+    #_ax_twin.spines["right"].set_color('red')
+    #_ax_twin.tick_params(color='red', labelcolor='red')
+
     _ax.grid()
 
     _ax.set_ylim([-8, -1])

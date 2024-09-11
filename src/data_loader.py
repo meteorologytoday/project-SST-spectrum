@@ -37,7 +37,7 @@ def getFilenameFromTimePentad(dataset, datatype, varname, tp: ptt.TimePentad):
     
 def load_dataset(dataset, datatype, varname, tp_beg, tp_end, label="", inclusive="left"):
 
-    if dataset in ["ERA5", "oisst", ]:
+    if dataset in ["ERA5", "oisst", "ostia"]:
         
         data_interval = pd.Timedelta(days=1)
 

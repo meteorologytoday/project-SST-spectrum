@@ -201,7 +201,7 @@ for year in range(args.year_rng[0], args.year_rng[1]+1):
         lon_rng = args.lon_rng,
         dataset = args.dataset,
         year = year,
-        varname = 'ssta',
+        varname = 'sst',
         spectral_dir = args.spectral_dir,
         label = args.label,
     )
