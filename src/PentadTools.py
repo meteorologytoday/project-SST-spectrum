@@ -77,7 +77,7 @@ class TimePentad:
         return (dt - self).toPentads() > 0
 
     def __str__(self):
-        return "%dP%02d" % (self.year, self.pentad)
+        return "%04dP%02d" % (self.year, self.pentad)
 
 
 class PentadDelta:

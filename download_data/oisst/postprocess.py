@@ -23,9 +23,9 @@ input_dir = "/home/t2hsu/SO2_t2hsu/project-SST-spectrum/data/physical/sst_raw/oi
 input_file_fmt = "sst.day.{datatype:s}.{year:04d}.nc"
 
 output_dir_fmt = "/home/t2hsu/SO2_t2hsu/project-SST-spectrum/data/physical/{varname:s}/oisst"
-output_file_fmt = "oisst_physical_{varname:s}_{year:04d}.nc"
+output_file_fmt = "oisst_physical_{varname:s}_{year:04d}P{pentad:02d}.nc"
 
-year_rng = [1982, 2023]
+year_rng = [2018, 2019]
 days_per_pentad = 5
 pentads_per_year = 73
 
@@ -41,22 +41,7 @@ for datatype in datatypes:
     pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     for year in range(year_rng[0], year_rng[1]+1):
-
-        print("Processing year %04d" % (year,))
         
-        output_filename = output_file_fmt.format(
-            year = year,
-            varname = new_varname,
-        )
-
-        output_full_filename = os.path.join(output_dir, output_filename)
-
-        if os.path.exists(output_full_filename):
-            print("File %s already exists. Skip." % (output_full_filename,))
-
-            continue
-
-
         input_filename = input_file_fmt.format(
             year = year,
             datatype = datatype,
@@ -65,11 +50,9 @@ for datatype in datatypes:
         input_full_filename = os.path.join(input_dir, input_filename)
 
         ds = xr.load_dataset(input_full_filename)
-        
+
         # First, check if there are enough days
-        
         t = ds.coords["time"]
-        
         test_dts = pd.date_range(
             pd.Timestamp(year=year, month=1, day=1),
             pd.Timestamp(year=year+1, month=1, day=1),
@@ -78,7 +61,6 @@ for datatype in datatypes:
         )
 
         t0 = test_dts[0]
-
         for i, dt in enumerate(test_dts):
             
             if t[i] != dt:
@@ -92,47 +74,57 @@ for datatype in datatypes:
         if res != 0:
             print("There are %d extra data that will be discarded. " % (res,))
 
+        for pentad in range(pentads_per_year):
 
-        time_bnd = [ [None, None] for _ in range(Nt) ]
-        pentadstamp = [ None for _ in range(Nt) ]
-        for i in range(Nt):
-            beg_dt = t0 + pd.Timedelta(days=days_per_pentad * i)
-            end_dt = t0 + pd.Timedelta(days=days_per_pentad * (i+1))
-            time_bnd[i][0] = beg_dt
-            time_bnd[i][1] = end_dt
+            print("Processing year %04dP%02d" % (year, pentad))
             
-            pentadstamp[i] = beg_dt.year * pentads_per_year + i
+            output_filename = output_file_fmt.format(
+                year = year,
+                pentad = pentad,
+                varname = new_varname,
+            )
 
-        
-        new_data = dict()
-        for _varname in [varname, ]:  # Make it into a loop for future flexibility
-            d = np.zeros((Nt, ds.dims["lat"], ds.dims["lon"]))
-            da = ds[_varname]
-            for i in range(Nt):
-                d[i, :, :] = da.isel(time=slice(i*5, (i+1)*5)).mean(dim="time").to_numpy()
+            output_full_filename = os.path.join(output_dir, output_filename)
 
-            new_data[new_varname] = ( ["pentadstamp", "lat", "lon"], d )
+            if os.path.exists(output_full_filename):
+                print("File %s already exists. Skip." % (output_full_filename,))
+                continue
 
-       
-        new_data["time_bnd"] = ( ["pentadstamp", "num_of_bnd"], time_bnd )
+            
 
-        new_ds = xr.Dataset(
-            data_vars=new_data,
-            coords=dict(
-                pentadstamp = ( ["pentadstamp", ] , pentadstamp),
-                lat=ds.coords["lat"],
-                lon=ds.coords["lon"],
-            ),
-            attrs=dict(description="Weather related data."),
-        )
+            beg_dt = t0 + pd.Timedelta(days=days_per_pentad * pentad)
+            end_dt = t0 + pd.Timedelta(days=days_per_pentad * (pentad+1))
+
+            time_bnd = [ [beg_dt, end_dt] , ]
+            pentadstamp = [ year * pentads_per_year + pentad , ]
+
+            new_data = dict()
+            for _varname in [varname, ]:  # Make it into a loop for future flexibility
+                d = np.zeros((1, ds.dims["lat"], ds.dims["lon"]))
+                d[0, :, :] = ds[_varname].isel(time=slice(pentad*days_per_pentad, (pentad+1)*days_per_pentad)).mean(dim="time").to_numpy()
+
+                new_data[new_varname] = ( ["pentadstamp", "lat", "lon"], d )
+
+           
+            new_data["time_bnd"] = ( ["pentadstamp", "num_of_bnd"], time_bnd )
+
+            new_ds = xr.Dataset(
+                data_vars=new_data,
+                coords=dict(
+                    pentadstamp = ( ["pentadstamp", ] , pentadstamp),
+                    lat=ds.coords["lat"],
+                    lon=ds.coords["lon"],
+                ),
+                attrs=dict(description="Postprocessed OISST data."),
+            )
 
 
-        print("Output: ", output_full_filename)
-        new_ds.to_netcdf(
-            output_full_filename,
-            unlimited_dims="pentadstamp",
-            encoding={'time_bnd':{'units':'hours since 1970-01-01'}},
-        )
+            print("Output: ", output_full_filename)
+            new_ds.to_netcdf(
+                output_full_filename,
+                unlimited_dims="pentadstamp",
+                encoding={'time_bnd':{'units':'hours since 1970-01-01'}},
+            )
 
 
 

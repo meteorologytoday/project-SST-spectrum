@@ -26,17 +26,15 @@ mpl.use('Agg')
 mpl.rc('font', size=15)
 mpl.rc('axes', labelsize=15)
 
-print("Done.")     
- 
+
  
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from matplotlib.patches import Rectangle
 import matplotlib.transforms as transforms
-from matplotlib.dates import DateFormatter
 import matplotlib.ticker as mticker
-import cartopy.crs as ccrs
 import tool_fig_config
+
+print("Done.")     
 
 
 def work(
@@ -49,7 +47,7 @@ def work(
 
     
     #print("Doing tp_rng = [ %s, %s ]" % (tp_rng[0], tp_rng[1], ))
-
+    print("Open dataset...")
     ds = data_loader.load_dataset(
         dataset = dataset,
         datatype = "spectral",
@@ -60,10 +58,13 @@ def work(
         inclusive = "both",
     )
 
+    print("Dataset opened.")
+
     wavenumber_max = np.amax(ds.coords["wavenumber"])
 
     ds = ds.isel(wvlen=slice(args.drop_wvn+1, None)).mean(dim="pentadstamp", keep_attrs=True)
 
+    data_physical = ds["data_physical"].to_numpy()
     amp = ds["dftcoe_form2"].sel(complex_radiphas="radius")
 
     variance = amp**2
@@ -71,7 +72,7 @@ def work(
     variance_frac = variance / total_variance 
 
     ncol = 1
-    nrow = 1
+    nrow = 2
 
     figsize, gridspec_kw = tool_fig_config.calFigParams(
         w = 6,
@@ -86,6 +87,7 @@ def work(
         nrow = nrow,
     )
 
+    print("Creating fig and ax...")
 
     fig, ax = plt.subplots(
         nrow, ncol,
@@ -115,25 +117,42 @@ def work(
     _ax.set_title("[%s] [%s] %s %s" % (args.dataset, label, str(tp_rng[0]), varname,) )
     _ax.set_xlabel("Wavelength [ deg ]")
     _ax.set_ylabel("Magnitude [ $  \\mathrm{K} $ ]")
-    _ax_twin.set_ylabel("Variance Fraction [ %% ]")
+    _ax_twin.set_ylabel("Variance Fraction [ $ \\% $ ]")
     
-    #_ax.spines["right"].set_color('red')
-    #_ax_twin.spines["right"].set_color('red')
-    #_ax_twin.tick_params(color='red', labelcolor='red')
+    _ax.spines["right"].set_color('red')
+    _ax_twin.spines["right"].set_color('red')
+    _ax_twin.tick_params(color='red', labelcolor='red')
 
     _ax.grid()
 
     _ax.set_ylim([-8, -1])
     _ax_twin.set_ylim([0, 0.3])
-
-
-
+    
+    _ax.set_xlim(plot_xlim)
     _ax.set_xticks(
         ticks=labeled_ticks,
         labels=labeled_wvlen_txts,
     )
 
-    _ax.set_xlim(plot_xlim)
+    # Plot SST
+
+    x = ds.coords["x"].to_numpy()
+    m, b = np.polyfit(x, data_physical, 1)
+    data_physical_removed_mean = data_physical - b
+    data_physical_detrended = data_physical - (m * x + b) 
+
+    print("data_physical_removed_mean = ", data_physical_removed_mean)
+
+    _ax = ax[1, 0]
+    _ax.plot( x, data_physical_removed_mean, "k-")
+    _ax.plot( x, data_physical_detrended, "r-")
+    _ax.set_xlabel("x [ deg ]")
+    _ax.set_ylabel("$ \\mathrm{SST}' $ [ K ]")
+    _ax.set_ylim([-5, 5])
+
+    _ax.grid()
+
+
 
     output_dir = os.path.dirname(output_filename)
     if not os.path.exists(output_dir):
@@ -143,7 +162,7 @@ def work(
     print("Writing output: ", output_filename) 
     fig.savefig(output_filename, dpi=200)
 
-
+    ds.close()
     plt.close(fig)
 
 print("Plotting dataset: ", args.dataset)

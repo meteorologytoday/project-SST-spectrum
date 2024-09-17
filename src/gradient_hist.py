@@ -6,7 +6,6 @@ import os
 
 import numpy as np
 import xarray as xr
-import dask
 import scipy
 import pandas as pd
 import argparse
@@ -30,37 +29,11 @@ parser.add_argument('--nproc', type=int, help='The lon axis range to be plot in 
 args = parser.parse_args()
 print(args)
 
-def fft_analysis(d, dx):
+def gradient(ds):
 
     Nt = d.shape[0]
     Nx = d.shape[1]
-    necessary_N = Nx // 2
 
-    #d_m = np.nanmean(d, axis=1, keepdims=True)
-    #d_a = d - d_m
-
-    d_a = np.zeros_like(d)
-    x = np.arange(Nx)
-    for t in range(Nt):
-        m, b = np.polyfit(x, d[t, :], 1)
-        d_a[t, :] = d[t, :] - (m * x + b) 
- 
-    dft_coe = np.fft.fft(d_a, axis=1) / Nx
-    wvlens = dx / np.fft.fftfreq(Nx)
-    
-    necessary_N = Nx // 2
-    dft_coe = dft_coe[:, 0:necessary_N]
-    wvlens = wvlens[0:necessary_N]
-
-    dft_coe_2d = np.zeros((dft_coe.shape[0], necessary_N, 2), dtype=float)
-    dft_coe_2d[:, :, 0] = np.real(dft_coe)
-    dft_coe_2d[:, :, 1] = np.imag(dft_coe)
-    
-    dft_coe_2d_radiphas = np.zeros((dft_coe.shape[0], necessary_N, 2), dtype=float)
-    dft_coe_2d_radiphas[:, :, 0] = np.abs(dft_coe)
-    dft_coe_2d_radiphas[:, :, 1] = np.angle(dft_coe)
-
-    return dft_coe_2d, dft_coe_2d_radiphas, wvlens
 
 def work(
     details,
@@ -111,6 +84,7 @@ def work(
             
             return result
             
+        
 
 
         data_vars = {}
@@ -123,20 +97,17 @@ def work(
         dlat = coords["lat"][1] - coords["lat"][0]
         dlon = coords["lon"][1] - coords["lon"][0]
 
-        print("Subsetting data...")
-        with dask.config.set(**{'array.slicing.split_large_chunks': True}): 
-            da = ds[varname].sel(lat=slice(*args.lat_rng), lon=slice(*args.lon_rng))
+        for 
+ 
+        da = ds[varname].sel(lat=slice(*args.lat_rng), lon=slice(*args.lon_rng))
        
-        print("Doing avg...")
         if spectral_dir == "lat": 
-            x = da.coords["lat"].to_numpy()
-            Nx = len(x)
+            Nx = len(da.coords["lat"])
             dx = dlat
             da = da.mean(dim="lon")
 
         elif spectral_dir == "lon": 
-            x = da.coords["lon"].to_numpy()
-            Nx = len(x)
+            Nx = len(da.coords["lon"])
             dx = dlon
             da = da.mean(dim="lat")
 
@@ -145,8 +116,6 @@ def work(
             raise Exception("Unknown spectral_dir = %s" % (str(spectral_dir)))
        
         Lx = dx * Nx
-
-        print("Converting to numpy..")
         da_numpy = da.to_numpy()
         #SST_nonan = SST.copy()
         #SST_nonan[np.isnan(SST_nonan)] = 0.0
@@ -155,16 +124,13 @@ def work(
         if np.any(np.isnan(da_numpy)):
             print("Warning: Data `%s` contains NaN." % (varname,))
 
-        print("Doing fft..")
         dft_coe_form1, dft_coe_form2, wvlens = fft_analysis(da_numpy, dx)
         
         data_vars["dftcoe_form1"] = ( ["pentadstamp", "wvlen", "complex_realimag"], dft_coe_form1 )
         data_vars["dftcoe_form2"] = ( ["pentadstamp", "wvlen", "complex_radiphas"], dft_coe_form2 )
         
         data_vars["time_bnd"] = ds["time_bnd"]
-        data_vars["data_physical"] = ( ["pentadstamp", "x" ], da_numpy )
-
- 
+        
         new_ds = xr.Dataset(
             data_vars=data_vars,
             coords=dict(
@@ -173,7 +139,6 @@ def work(
                 wavenumber = (["wvlen",] , list(np.arange(len(wvlens)))),
                 complex_realimag = ["real", "imag"],
                 complex_radiphas = ["radius", "phase"],
-                x = (["x",], x), 
             ),
             attrs=dict(
                 description="Spectral data",

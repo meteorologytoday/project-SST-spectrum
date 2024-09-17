@@ -5,14 +5,19 @@ import PentadTools as ptt
 
 data_archive = "data"
 
-def getFilenameFromYear(dataset, datatype, varname, year: int, label=""):
+def _getFilename(dataset, datatype, varname, year: int, pentad: int, label=""):
     
-    if datatype not in ["physical", "spectral"]:
+    if datatype not in ["physical", "cropped", "spectral"]:
         raise Exception("Unknown datatype: %s" % (datatype,))
 
-    if datatype == "spectral":
-        if label == "":
+        
+    if label == "":
+        if datatype == "spectral":
             raise Exception("Spectral data needs parameter `label`.")
+
+        elif datatype == "cropped":
+            raise Exception("Cropped data needs parameter `label`.")
+
 
     full_filename = os.path.join(
         data_archive,
@@ -20,24 +25,26 @@ def getFilenameFromYear(dataset, datatype, varname, year: int, label=""):
         label,
         varname,
         dataset,
-        "{dataset:s}_{datatype:s}_{varname:s}_{year:04d}.nc".format(
+        "{dataset:s}_{datatype:s}_{varname:s}_{year:04d}P{pentad:02d}.nc".format(
             dataset = dataset,
             datatype = datatype,
             varname = varname,
             year = year,
+            pentad = pentad,
         ),
     )
 
     return full_filename 
  
-def getFilenameFromTimePentad(dataset, datatype, varname, tp: ptt.TimePentad):
-   
-    return getFilenameFromYear(dataset, datatype, varname, tp.year) 
+def getFilenameFromTimePentad(dataset, datatype, varname, tp: ptt.TimePentad, label=""):
+    return _getFilename(dataset, datatype, varname, tp.year, tp.pentad, label=label)
  
     
 def load_dataset(dataset, datatype, varname, tp_beg, tp_end, label="", inclusive="left"):
 
-    if dataset in ["ERA5", "oisst", "ostia"]:
+    print("Check if parameters are fine...")
+
+    if dataset in ["oisst", "ostia", "MUR"]:
         
         data_interval = pd.Timedelta(days=1)
 
@@ -53,15 +60,21 @@ def load_dataset(dataset, datatype, varname, tp_beg, tp_end, label="", inclusive
     
      
     filenames = [
-        getFilenameFromYear(dataset, datatype, varname, year, label=label)
-        for year in range(tp_beg.year, tp_end.year+1)
+        getFilenameFromTimePentad(dataset, datatype, varname, tp, label=label)
+        for tp in ptt.pentad_range(tp_beg, tp_end, inclusive=inclusive)
     ]
     
     sel_pentadstamps = [ tp.toPentadstamp() for tp in ptt.pentad_range(tp_beg, tp_end, inclusive=inclusive) ]
+    print("sel_pentadstamps = ", sel_pentadstamps)
     
+    print("Open dataset using xr.open_mfdataset...")
     ds = xr.open_mfdataset(filenames)
+    
+    print("Subsetting...")
+
     ds = ds.sel(pentadstamp = sel_pentadstamps)
 
+    print("Done subsetting.")
     return ds
     
     

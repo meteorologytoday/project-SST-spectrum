@@ -10,7 +10,7 @@ for dataset in oisst ostia ; do
         --label $label \
         --year-rng 2018 2018 \
         --spectral-dir $spectral_dir \
-        --lat-rng 30 35  \
+        --lat-rng 42 48  \
         --lon-rng 150 230
 
 

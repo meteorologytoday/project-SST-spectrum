@@ -11,9 +11,9 @@ for varname in sst ; do
         --output-dir figures/spectrum_snapshot \
         --varname $varname        \
         --label $label       \
-        --timepentad-rng 2018P0 2019P0 \
+        --timepentad-rng 2018P0 2018P5 \
         --pentads-interval 1 \
-        --drop-wvn 5
+        --drop-wvn 3
 
 done
 done
