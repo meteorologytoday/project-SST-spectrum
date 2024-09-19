@@ -27,6 +27,7 @@ parser.add_argument('--timepentad-rng', type=str, nargs=2, help="TimePetand rang
 parser.add_argument('--lat-rng', type=float, nargs=2, help='The lat axis range to be plot in km.', default=[None, None])
 parser.add_argument('--lon-rng', type=float, nargs=2, help='The lon axis range to be plot in km.', default=[None, None])
 parser.add_argument('--res-deg', type=float, help='The resolution in degree.', default=[None, None])
+parser.add_argument('--x-dim', type=str, help='The direction to be averaged. Can be `lat` or `lon`.', choices=['lat', 'lon'], required=True)
 parser.add_argument('--label', type=str, help='Label for this.', required=True)
 parser.add_argument('--nproc', type=int, help='The lon axis range to be plot in km.', default=1)
 
@@ -39,12 +40,12 @@ def work(
 
     lat_rng = details["lat_rng"]   
     lon_rng = details["lon_rng"]   
-    dlat = details["dlat"]   
-    dlon = details["dlon"]   
+    dx = details["dx"]   
     phase = details["phase"]   
     dataset = details["dataset"]
     tp = details["tp"]
     varname = details["varname"] 
+    x_dim = details["x_dim"] 
     label = details["label"]
     
     result = dict(
@@ -55,6 +56,9 @@ def work(
 
     try:
         
+        if x_dim not in ["lat", "lon"]:    
+            raise Exception("Unknown x_dim = %s" % (str(x_dim)))
+
         output_full_filename = os.path.join(
             data_loader.getFilenameFromTimePentad(
                 dataset = dataset,
@@ -81,23 +85,51 @@ def work(
         print("Subsetting data...")
         da = ds[varname].sel(lat=slice(*lat_rng), lon=slice(*lon_rng))
          
-        new_lat = np.arange(lat_rng[0], lat_rng[1], dlat)
-        new_lon = np.arange(lon_rng[0], lon_rng[1], dlon)
+        if x_dim == "lat":
+            avg_dim = "lon" 
+            new_x = np.arange(lat_rng[0], lat_rng[1], dx)
 
+        elif x_dim == "lon": 
+            avg_dim = "lat" 
+            new_x = np.arange(lon_rng[0], lon_rng[1], dx) 
+
+
+        print("Doing avg...")
+        da = da.mean(dim=avg_dim)
+        
         print("Interpolation...")
         
-        da = da.interp(coords=dict(lat = new_lat, lon=new_lon), method="linear")
+        x_beg = da.coords[x_dim].to_numpy()[0]
+        x_end = da.coords[x_dim].to_numpy()[-1]
+        
+        """
+        # find the first and last new_x point that can be interpolated
+        for i, x in enumerate(new_x):
+            if x >= x_beg:
+                new_x = new_x[i:]
+                break
  
+        for i in range(len(new_x)):
+
+            test_idx = len(new_x) - i - 1
+            if new_x[test_idx] <= x_end:
+                new_x = new_x[:(test_idx+1)]
+                break
+        """
+
+        da = da.interp(coords={x_dim : new_x}, method="linear")
+ 
+        x = da.coords[x_dim].to_numpy()
+
         print("Converting to numpy..")
         da_numpy = da.to_numpy()
 
         if np.any(np.isnan(da_numpy)):
             print("Warning: Data `%s` contains NaN." % (varname,))
-
         
         pentadstamp = ds.coords["pentadstamp"]
 
-        data_vars[varname] = ( ["pentadstamp", "lat", "lon"], da_numpy)
+        data_vars[varname] = ( ["pentadstamp", "x"], da_numpy)
         data_vars["time_bnd"] = ds["time_bnd"]
  
         new_ds = xr.Dataset(
@@ -106,14 +138,14 @@ def work(
 
             coords=dict(
                 pentadstamp = ds.coords['pentadstamp'],
-                lat = (["lat",], new_lat), 
-                lon = (["lon",], new_lon), 
+                x = (["x",], x), 
             ),
 
             attrs=dict(
                 description="Cropped data",
-                dlat = dlat,
-                dlon = dlon,
+                avg_dim = avg_dim,
+                x_dim = x_dim,
+                dx = dx,
             ),
         )
 
@@ -149,9 +181,9 @@ for tp in tps:
         dataset = args.dataset,
         tp = tp,
         varname = 'sst',
+        x_dim = args.x_dim,
         label = args.label,
-        dlon = args.res_deg,
-        dlat = args.res_deg,
+        dx = args.res_deg,
     )
 
     details["phase"] = "detect"

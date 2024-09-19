@@ -1,10 +1,12 @@
 #!/bin/bash
 
-output_dir=/data/SO2/t2hsu/project-SST-spectrum/data/physical/sst_raw/oisst
+output_dir=../../data/physical/sst_raw/oisst
 
+mkdir -p $output_dir
 
-for datatype in anom mean ; do
-for y in $( seq 1981 2024 ) ; do
+#for datatype in anom mean ; do
+for datatype in mean ; do
+for y in $( seq 2012 2024 ) ; do
 
     year_str=$( printf "%04d" $y )
     filename=sst.day.${datatype}.${year_str}.nc

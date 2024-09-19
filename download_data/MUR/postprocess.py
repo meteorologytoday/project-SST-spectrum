@@ -17,13 +17,13 @@ def findfirst(a):
 
 dataset = "MUR"
 
-input_dir = "/home/t2hsu/SO2_t2hsu/project-SST-spectrum/data/physical/sst_raw/{dataset:s}".format(dataset=dataset)
+input_dir = "../../data/physical/sst_raw/{dataset:s}".format(dataset=dataset)
 input_file_fmt = "{datestr:s}090000-JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1.nc"
 
-output_dir_fmt = "/home/t2hsu/SO2_t2hsu/project-SST-spectrum/data/physical/{varname:s}/{dataset:s}"
-output_file_fmt = "{dataset:s}_physical_{varname:s}_{year:04d}-{pentad:02d}.nc"
+output_dir_fmt = "../../data/physical/{varname:s}/{dataset:s}"
+output_file_fmt = "{dataset:s}_physical_{varname:s}_{year:04d}P{pentad:02d}.nc"
 
-year_rng = [2018, 2018]
+year_rng = [2012, 2024]
 days_per_pentad = 5
 pentads_per_year = 73
 

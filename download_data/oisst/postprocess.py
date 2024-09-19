@@ -19,13 +19,13 @@ varname_mapping = dict(
 )
 
 
-input_dir = "/home/t2hsu/SO2_t2hsu/project-SST-spectrum/data/physical/sst_raw/oisst"
+input_dir = "../../data/physical/sst_raw/oisst"
 input_file_fmt = "sst.day.{datatype:s}.{year:04d}.nc"
 
-output_dir_fmt = "/home/t2hsu/SO2_t2hsu/project-SST-spectrum/data/physical/{varname:s}/oisst"
+output_dir_fmt = "../../data/physical/{varname:s}/oisst"
 output_file_fmt = "oisst_physical_{varname:s}_{year:04d}P{pentad:02d}.nc"
 
-year_rng = [2018, 2019]
+year_rng = [2012, 2024]
 days_per_pentad = 5
 pentads_per_year = 73
 
@@ -102,6 +102,9 @@ for datatype in datatypes:
             for _varname in [varname, ]:  # Make it into a loop for future flexibility
                 d = np.zeros((1, ds.dims["lat"], ds.dims["lon"]))
                 d[0, :, :] = ds[_varname].isel(time=slice(pentad*days_per_pentad, (pentad+1)*days_per_pentad)).mean(dim="time").to_numpy()
+
+                if varname == "sst":
+                    d += 273.15
 
                 new_data[new_varname] = ( ["pentadstamp", "lat", "lon"], d )
 
