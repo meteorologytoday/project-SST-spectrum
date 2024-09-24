@@ -47,6 +47,7 @@ parser.add_argument('--output-timeseries', type=str, help='Input file', default=
 parser.add_argument('--output-EOF', type=str, help='Input file', default="")
 parser.add_argument('--title', type=str, help='Input file', default="")
 parser.add_argument('--nEOF', type=int, help='Input file', default=2)
+parser.add_argument('--nEOF-variance', type=int, help='Numbmer of variance to plot', default=5)
 parser.add_argument('--no-display', action="store_true")
 args = parser.parse_args()
 print(args)
@@ -83,7 +84,7 @@ print("done")
 
 
 print("Plotting Timeseries... ")
-ncol = 1
+ncol = 2
 nrow = 1
 print("Create figure...")
 figsize, gridspec_kw = tool_fig_config.calFigParams(
@@ -92,8 +93,8 @@ figsize, gridspec_kw = tool_fig_config.calFigParams(
     wspace = 1.0,
     hspace = 0.5,
     w_left = 1.0,
-    w_right = 1.0,
-    h_bottom = 1.0,
+    w_right = 0.25,
+    h_bottom = 0.5,
     h_top = 0.25,
     ncol = ncol,
     nrow = nrow,
@@ -109,7 +110,6 @@ fig_ts, ax = plt.subplots(
 )
 
 # Time series
-print("Plot timeseries...")
 _ax = ax[0, 0]
 for i in range(args.nEOF):
     _ax.plot(np.arange(ds.dims["pentadstamp"]), ds["projected_idx"].isel(mode=i), label="EOF%d" % (i+1,))
@@ -117,10 +117,32 @@ for i in range(args.nEOF):
 
 _ax.set_xlabel("Samples")
 _ax.set_ylabel("Projected Index")
+_ax.set_title("(a) Series Projected Index")
 
 
 _ax.legend()
 _ax.grid(True)
+
+# Variances explained
+_ax = ax[0, 1]
+frac_var = ds["variance"].isel(mode=slice(0, args.nEOF_variance) ) / np.sum(ds["variance"]) * 100
+
+_ax.plot(
+    1 + np.arange(len(frac_var)),
+    frac_var,
+    marker = "o",
+    markersize = 8,
+    linestyle="dashed",
+    color = "black",
+)
+
+_ax.set_ylim([0, 20])
+_ax.set_xlabel("Modes")
+_ax.set_ylabel("Variance explained [ $ \\% $ ]")
+_ax.set_title("(b) Variance explained")
+
+_ax.grid(True)
+
 
 if not args.no_display:
     plt.show()
@@ -188,7 +210,7 @@ _ax.set_title("(a) Mean")
 
 
 _ax = ax[0, 1]
-mappable = _ax.contourf(coords["lon"], coords["lat"], ds["std"], levels=np.linspace(0, 1, 21), cmap=cmocean.cm.balance, extend="both", transform=proj_norm)
+mappable = _ax.contourf(coords["lon"], coords["lat"], ds["std"], levels=np.linspace(0, 1, 11), cmap=cmocean.cm.gray, extend="max", transform=proj_norm)
 
 cax = tool_fig_config.addAxesNextToAxes(fig_EOF, _ax, "right", thickness=0.02, spacing=0.02)
 cb = plt.colorbar(mappable, cax=cax, orientation="vertical", pad=0.00)
