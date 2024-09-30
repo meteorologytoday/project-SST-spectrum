@@ -43,7 +43,9 @@ def getFilenameFromTimePentad(dataset, datatype, varname, tp: ptt.TimePentad, la
 def load_dataset(dataset, datatype, varname, tp_beg, tp_end, label="", inclusive="left"):
 
     print("Check if parameters are fine...")
+    data_interval = pd.Timedelta(days=1)
 
+    """
     if dataset in ["oisst", "ostia", "MUR"]:
         
         data_interval = pd.Timedelta(days=1)
@@ -51,7 +53,8 @@ def load_dataset(dataset, datatype, varname, tp_beg, tp_end, label="", inclusive
     else:
 
         raise Exception("Unknown dataset: %s" % (dataset,))
-   
+    """
+
     tp_beg = ptt.TimePentad(tp_beg)
     tp_end = ptt.TimePentad(tp_end)
  

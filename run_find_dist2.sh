@@ -1,36 +1,38 @@
 #!/bin/bash
 source 98_trapkill.sh
 
-nproc=5
+nproc=1
 
 
 res_deg=0.1
 label="NPAC_${res_deg}"
 
-dataset_ref=MUR
-dataset_compare=( 
+datasets=( 
+    MUR_JPL
+    OSTIA_UKMO
+    DMIOI_DMI
+    GAMSSA_ABOM
+    K10SST_NAVO
+    GPBN_OSPO
     oisst
-    ostia 
 )
 
 
 
-for dataset_compare in "${dataset_compare[@]}" ; do
 for varname in sst ; do
-for mask_region in NPAC_NORTH NPAC_SOUTH NPAC ; do
+for mask_region in NPAC_SOUTH NPAC_NORTH NPAC_ALL ; do
 
     mask_file=gendata/mask/mask_${label}.nc
 
 
-    python3 src/find_EOF.py \
-        --dataset-compare $dataset_compare \
-        --dataset-ref $dataset_ref \
+    python3 src/find_dist2.py \
+        --datasets "${datasets[@]}" \
         --label $label \
-        --output-dir gendata/EOFs \
+        --output-dir gendata/dist2_mtx \
+        --overwrite \
         --varname $varname        \
-        --year-rng 2012 2021 \
-        --modes 20 \
-        --pentad-rng 0 5 \
+        --year-rng 2023 2023 \
+        --pentad-rng -6 11 \
         --mask-file $mask_file \
         --mask-region $mask_region &
 
@@ -42,6 +44,5 @@ for mask_region in NPAC_NORTH NPAC_SOUTH NPAC ; do
         nproc_cnt=0
     fi
 
-done
 done
 done

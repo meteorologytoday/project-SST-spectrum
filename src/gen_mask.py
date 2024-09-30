@@ -45,7 +45,7 @@ ds = data_loader.load_dataset(
 test_da = ds["sst"].isel(pentadstamp=0).load()
 
 regions = [
-    "NPAC", "NPAC_SOUTH", "NPAC_NORTH", 
+    "NPAC_ALL", "NPAC_SOUTH", "NPAC_NORTH", "NPAC_EAST", "NPAC_WEST", 
 ]
 
 
@@ -69,7 +69,7 @@ for i, region in enumerate(regions):
     _mask = mask.sel(region=region).copy()
     
 
-    if region == "NPAC":
+    if region == "NPAC_ALL":
         
         _mask = _mask.where(
             (_mask.lat > 0) &
@@ -81,22 +81,39 @@ for i, region in enumerate(regions):
     elif region == "NPAC_SOUTH":
         
         _mask = _mask.where(
-            (_mask.lat > 10) &
-            (_mask.lat <= 50) &
-            (_mask.lon > 150) &
-            (_mask.lon <= 230) 
+            (_mask.lat > 0) &
+            (_mask.lat <= 30) &
+            (_mask.lon > 120) &
+            (_mask.lon <= 250) 
         )
 
 
     elif region == "NPAC_NORTH":
         
         _mask = _mask.where(
-            (_mask.lat > 20) &
+            (_mask.lat > 30) &
             (_mask.lat <= 60) &
-            (_mask.lon > 150) &
-            (_mask.lon <= 230) 
+            (_mask.lon > 120) &
+            (_mask.lon <= 250) 
         )
 
+    elif region == "NPAC_EAST":
+        
+        _mask = _mask.where(
+            (_mask.lat > 0) &
+            (_mask.lat <= 60) &
+            (_mask.lon > 180) &
+            (_mask.lon <= 250) 
+        )
+
+    elif region == "NPAC_WEST":
+        
+        _mask = _mask.where(
+            (_mask.lat > 0) &
+            (_mask.lat <= 60) &
+            (_mask.lon > 120) &
+            (_mask.lon <= 180) 
+        )
  
     else:
         

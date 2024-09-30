@@ -49,12 +49,32 @@ parser.add_argument('--title', type=str, help='Input file', default="")
 parser.add_argument('--nEOF', type=int, help='Input file', default=2)
 parser.add_argument('--nEOF-variance', type=int, help='Numbmer of variance to plot', default=5)
 parser.add_argument('--no-display', action="store_true")
+parser.add_argument('--plot-every-N-pts', type=int, help="Skip points to speed up plotting.", default=1)
 args = parser.parse_args()
 print(args)
 
 
 
 ds = xr.open_dataset(args.input)
+
+if args.plot_every_N_pts != 1:
+    ds = ds.isel(lat=slice(None, None, args.plot_every_N_pts), lon=slice(None, None, args.plot_every_N_pts))
+
+
+# Decide the sign of mode
+EOF_signs = np.ones((ds.dims["mode"],), dtype=int)
+for i in range(ds.dims["mode"]): 
+    
+    EOF = ds["EOF"].isel(mode=i).to_numpy()
+     
+    # There are NaNs so it is easier this way
+    cnt_pos_sign = np.sum(np.isfinite(EOF) & (EOF >= 0))
+    cnt_neg_sign = np.sum(np.isfinite(EOF) & (EOF < 0))
+    
+    if cnt_neg_sign > cnt_pos_sign:
+        EOF_signs[i] = -1
+
+print("Signs: ", EOF_signs)
 
 # Plot data
 print("Loading Matplotlib...")
@@ -112,7 +132,8 @@ fig_ts, ax = plt.subplots(
 # Time series
 _ax = ax[0, 0]
 for i in range(args.nEOF):
-    _ax.plot(np.arange(ds.dims["pentadstamp"]), ds["projected_idx"].isel(mode=i), label="EOF%d" % (i+1,))
+    _data = ds["projected_idx"].isel(mode=i)
+    _ax.plot(np.arange(len(_data)), _data * EOF_signs[i], label="EOF%d" % (i+1,))
 
 
 _ax.set_xlabel("Samples")
@@ -210,7 +231,7 @@ _ax.set_title("(a) Mean")
 
 
 _ax = ax[0, 1]
-mappable = _ax.contourf(coords["lon"], coords["lat"], ds["std"], levels=np.linspace(0, 1, 11), cmap=cmocean.cm.gray, extend="max", transform=proj_norm)
+mappable = _ax.contourf(coords["lon"], coords["lat"], ds["std"], levels=np.linspace(0, 0.5, 11), cmap=cmocean.cm.gray, extend="max", transform=proj_norm)
 
 cax = tool_fig_config.addAxesNextToAxes(fig_EOF, _ax, "right", thickness=0.02, spacing=0.02)
 cb = plt.colorbar(mappable, cax=cax, orientation="vertical", pad=0.00)
@@ -229,7 +250,7 @@ for i in range(args.nEOF):
 
 
 
-    EOF = ds["EOF"].sel(mode=i)
+    EOF = ds["EOF"].isel(mode=i) * EOF_signs[i]
     EOF /= 2 * EOF.std()
 
     mappable = _ax.contourf(coords["lon"], coords["lat"], EOF, levels=np.linspace(-1, 1, 21), cmap=cmocean.cm.balance, extend="both", transform=proj_norm)

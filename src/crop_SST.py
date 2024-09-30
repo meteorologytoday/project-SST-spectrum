@@ -77,16 +77,24 @@ def work(
         data_vars = {}
 
         ds = data_loader.load_dataset(dataset, "physical", varname, tp, tp, inclusive="both")
+        da = ds[varname]
+        print("Before subsetting")
+        print("da = ", da)
          
         print("Subsetting data...")
-        da = ds[varname].sel(lat=slice(*lat_rng), lon=slice(*lon_rng))
-         
+        da = da.sel(lat=slice(*lat_rng), lon=slice(*lon_rng))
+        
+        print("Before interpolation")
+        print("da = ", da)
+ 
         new_lat = np.arange(lat_rng[0], lat_rng[1], dlat)
         new_lon = np.arange(lon_rng[0], lon_rng[1], dlon)
 
         print("Interpolation...")
         
         da = da.interp(coords=dict(lat = new_lat, lon=new_lon), method="linear")
+
+        print(da)
  
         print("Converting to numpy..")
         da_numpy = da.to_numpy()
@@ -140,7 +148,8 @@ def work(
 
 
 input_args = []
-tps = list(pentt.pentad_range(args.timepentad_rng[0], args.timepentad_rng[1], inclusive="left"))
+tps = list(pentt.pentad_range(args.timepentad_rng[0], args.timepentad_rng[1], inclusive="both"))
+
 for tp in tps:
 
     details = dict(
@@ -159,6 +168,7 @@ for tp in tps:
     test = work(details)
 
     if test["need_work"]:
+    
         details["phase"] = "work"
         input_args.append(
             ( details, )

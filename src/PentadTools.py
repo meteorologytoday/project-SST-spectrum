@@ -1,3 +1,5 @@
+import numpy as np
+
 pentads_per_year = 73
 
 class TimePentad:
@@ -28,11 +30,12 @@ class TimePentad:
             pentad = int(pentad_split[1], base=10)
 
         
-        if pentad < 0 or pentad > 72:
-            raise Exception("Pentad should be 0~72. Now it is %d" % (pentad,)) 
+        if pentad < 0 or pentad >= pentads_per_year:
+            print("Warning: Receive pentad not within in [0, %d]. Now it is %d" % (pentads_per_year - 1, pentad,)) 
 
-        self.year = year
-        self.pentad = pentad
+        self.year = year + pentad // pentads_per_year
+        self.pentad = pentad % pentads_per_year
+        
 
     def toPentadstamp(self):
         return TimePentad2Pentads(self)
