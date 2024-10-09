@@ -58,7 +58,7 @@ input_file_fmt = "{datestr:s}{timestr:s}-{suffix:s}.nc"
 output_dir_fmt = "../../data/physical/{varname:s}/{dataset:s}"
 output_file_fmt = "{dataset:s}_physical_{varname:s}_{year:04d}P{pentad:02d}.nc"
 
-year_rng = [2022, 2023]
+year_rng = [2018, 2023]
 days_per_pentad = 5
 pentads_per_year = 73
 

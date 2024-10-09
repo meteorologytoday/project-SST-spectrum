@@ -86,7 +86,7 @@ def work(
     else:
         N_diffs = N_datasets - 1
         print("The `--decentralize` is not activated. There will be %d comparison. " % ( N_diffs, ) )
-        for i in range(1, N):
+        for i in range(1, N_datasets):
             comparison_pairs.append((0, i))
 
     print("Comparison pairs: ", comparison_pairs)

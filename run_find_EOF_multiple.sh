@@ -7,14 +7,14 @@ nproc=1
 res_deg=0.1
 label="NPAC_${res_deg}"
 
-datasets=( 
+datasets=(
+    GHRSST 
     MUR_JPL
     OSTIA_UKMO
     DMIOI_DMI
     GAMSSA_ABOM
     K10SST_NAVO
     GPBN_OSPO
-    oisst
 )
 
 
@@ -34,7 +34,6 @@ for mask_region in NPAC_ALL NPAC_EAST NPAC_WEST NPAC_SOUTH NPAC_NORTH ; do
         --year-rng 2023 2023 \
         --modes 15 \
         --pentad-rng -6 11 \
-        --decentralize \
         --mask-file $mask_file \
         --mask-region $mask_region &
 
