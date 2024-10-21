@@ -1,7 +1,7 @@
 #!/bin/bash
 source 98_trapkill.sh
 
-nproc=1
+nproc=2
 
 
 res_deg=0.1
@@ -20,8 +20,10 @@ datasets=(
 
 
 
+#for year in $( seq 2020 2023 ) ; do
 for varname in sst ; do
-for mask_region in NPAC_ALL NPAC_EAST NPAC_WEST NPAC_SOUTH NPAC_NORTH ; do
+#for mask_region in NPAC_ALL NPAC_EAST NPAC_WEST NPAC_SOUTH NPAC_NORTH ; do
+for mask_region in WWRF ; do
 
     mask_file=gendata/mask/mask_${label}.nc
 
@@ -31,7 +33,7 @@ for mask_region in NPAC_ALL NPAC_EAST NPAC_WEST NPAC_SOUTH NPAC_NORTH ; do
         --label $label \
         --output-dir gendata/EOF_multiple_datasets \
         --varname $varname        \
-        --year-rng 2023 2023 \
+        --year-rng 2020 2023 \
         --modes 15 \
         --pentad-rng -6 11 \
         --mask-file $mask_file \
@@ -48,6 +50,7 @@ for mask_region in NPAC_ALL NPAC_EAST NPAC_WEST NPAC_SOUTH NPAC_NORTH ; do
 
 done
 done
+#done
 
 wait
 

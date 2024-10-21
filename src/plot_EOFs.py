@@ -251,7 +251,7 @@ for i in range(args.nEOF):
 
 
     EOF = ds["EOF"].isel(mode=i) * EOF_signs[i]
-    EOF /= 2 * EOF.std()
+    EOF /= 3 * EOF.std()
 
     mappable = _ax.contourf(coords["lon"], coords["lat"], EOF, levels=np.linspace(-1, 1, 21), cmap=cmocean.cm.balance, extend="both", transform=proj_norm)
 

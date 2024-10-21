@@ -45,7 +45,7 @@ ds = data_loader.load_dataset(
 test_da = ds["sst"].isel(pentadstamp=0).load()
 
 regions = [
-    "NPAC_ALL", "NPAC_SOUTH", "NPAC_NORTH", "NPAC_EAST", "NPAC_WEST", 
+    "NPAC_ALL", "NPAC_SOUTH", "NPAC_NORTH", "NPAC_EAST", "NPAC_WEST", "WWRF" 
 ]
 
 
@@ -114,6 +114,16 @@ for i, region in enumerate(regions):
             (_mask.lon > 120) &
             (_mask.lon <= 180) 
         )
+ 
+    elif region == "WWRF":
+        
+        _mask = _mask.where(
+            (_mask.lat > 5) &
+            (_mask.lat <= 62) &
+            (_mask.lon > 160) &
+            (_mask.lon <= 250) 
+        )
+ 
  
     else:
         

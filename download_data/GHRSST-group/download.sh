@@ -4,8 +4,8 @@ spatial_selector="-180,0,180,90"
 
 
 dataset_details=(
-    MUR_JPL        MUR-JPL-L4-GLOB-v4.1
     OSTIA_UKMO     OSTIA-UKMO-L4-GLOB-v2.0
+    MUR_JPL        MUR-JPL-L4-GLOB-v4.1
     GPBN_OSPO      Geo_Polar_Blended_Night-OSPO-L4-GLOB-v1.0
     K10SST_NAVO    K10_SST-NAVO-L4-GLOB-v01
     GAMSSA_ABOM    GAMSSA_28km-ABOM-L4-GLOB-v01

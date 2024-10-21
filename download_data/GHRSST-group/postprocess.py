@@ -16,16 +16,11 @@ def findfirst(a):
 
 dataset_details=dict(
 
-
     K10SST_NAVO = dict(
         suffix = "NAVO-L4_GHRSST-SST1m-K10_SST-GLOB-v02.0-fv01.0",
         timestr = "000000",
     ),
    
-    MUR_JPL = dict(
-        suffix = "JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1",
-        timestr = "090000",
-    ),
     
     OSTIA_UKMO = dict(
         suffix = "UKMO-L4_GHRSST-SSTfnd-OSTIA-GLOB-v02.0-fv02.0",
@@ -45,6 +40,11 @@ dataset_details=dict(
     GPBN_OSPO = dict(
         suffix = "OSPO-L4_GHRSST-SSTfnd-Geo_Polar_Blended_Night-GLOB-v02.0-fv01.0",
         timestr = "000000",
+    ),
+
+    MUR_JPL = dict(
+        suffix = "JPL-L4_GHRSST-SSTfnd-MUR-GLOB-v02.0-fv04.1",
+        timestr = "090000",
     ),
 
 
@@ -67,20 +67,22 @@ varnames = {
     "analysed_sst" : "sst",
 }
 
-for dataset, dataset_detail in dataset_details.items():
+for year in range(year_rng[0], year_rng[1]+1):
+    print("Processing year %04d" % (year,))
     
-    for varname, new_varname in varnames.items():
+    for dataset, dataset_detail in dataset_details.items():
+       
+        print("Dealing with dataset: ", dataset)
+ 
+        for varname, new_varname in varnames.items():
 
-        output_dir = output_dir_fmt.format(
-            dataset = dataset,
-            varname=new_varname,
-        )
-        print("Making output folder if not exists: ", output_dir)
-        pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+            output_dir = output_dir_fmt.format(
+                dataset = dataset,
+                varname=new_varname,
+            )
 
-        for year in range(year_rng[0], year_rng[1]+1):
-
-            print("Processing year %04d" % (year,))
+            print("Making output folder if not exists: ", output_dir)
+            pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
                     
             t0 = pd.Timestamp(year=year, month=1, day=1)
             
