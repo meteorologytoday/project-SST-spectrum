@@ -11,6 +11,10 @@ dataset_details=(
     GAMSSA_ABOM    GAMSSA_28km-ABOM-L4-GLOB-v01
     DMIOI_DMI      DMI_OI-DMI-L4-GLOB-v1.0
 )
+dataset_details=(
+    OSTIA_UKMO     OSTIA-UKMO-L4-GLOB-v2.0
+)
+
 
 
 nparams=2
@@ -25,15 +29,15 @@ for i in $( seq 1 $N ) ; do
 
     output_dir=../../data/physical/sst_raw/$dataset
 
-    for year1 in $( seq 2018 2022 ) ; do
+    for year1 in $( seq 2022 ) ; do
 
         year2=$(( $year1 + 1  ))
 
         podaac-data-downloader \
             -c $dataset_label \
             -d $output_dir \
-            --start-date ${year1}-11-20T00:00:00Z \
-            --end-date ${year2}-03-10T00:00:00Z \
+            --start-date ${year1}-11-01T00:00:00Z \
+            --end-date ${year2}-01-10T00:00:00Z \
             -b="$spatial_selector"
 
     done
