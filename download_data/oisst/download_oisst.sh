@@ -6,7 +6,7 @@ mkdir -p $output_dir
 
 #for datatype in anom mean ; do
 for datatype in mean ; do
-for y in $( seq 2012 2024 ) ; do
+for y in 2024 ; do
 
     year_str=$( printf "%04d" $y )
     filename=sst.day.${datatype}.${year_str}.nc

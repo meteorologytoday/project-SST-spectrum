@@ -25,7 +25,7 @@ input_file_fmt = "sst.day.{datatype:s}.{year:04d}.nc"
 output_dir_fmt = "../../data/physical/{varname:s}/oisst"
 output_file_fmt = "oisst_physical_{varname:s}_{year:04d}P{pentad:02d}.nc"
 
-year_rng = [2012, 2024]
+year_rng = [2024, 2025]
 days_per_pentad = 5
 pentads_per_year = 73
 

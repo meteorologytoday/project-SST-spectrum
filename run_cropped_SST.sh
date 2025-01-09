@@ -9,12 +9,12 @@ res_deg=0.1
 label="NPAC_${res_deg}"
 
 datasets=(
-    MUR_JPL
-    K10SST_NAVO
+#    MUR_JPL
+#    K10SST_NAVO
     OSTIA_UKMO
-    DMIOI_DMI
-    GAMSSA_ABOM
-    GPBN_OSPO
+#    DMIOI_DMI
+#    GAMSSA_ABOM
+#    GPBN_OSPO
 #    oisst
 )
 
@@ -22,14 +22,14 @@ datasets=(
 #for dataset in MUR oisst ostia ; do
 
 nproc_cnt=0
-for y in $( seq 2019 2023 ) ; do
+for y in $( seq 2024 2024 ) ; do
 for dataset in "${datasets[@]}"; do
     
     
     python3 src/crop_SST.py \
         --dataset $dataset \
         --label $label \
-        --timepentad-rng ${y}P-10 ${y}P12 \
+        --timepentad-rng ${y}P-01 ${y}P01 \
         --lat-rng 0 65    \
         --lon-rng 120 250 \
         --res-deg $res_deg &

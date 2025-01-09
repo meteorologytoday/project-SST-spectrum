@@ -29,15 +29,15 @@ for i in $( seq 1 $N ) ; do
 
     output_dir=../../data/physical/sst_raw/$dataset
 
-    for year1 in $( seq 2022 ) ; do
+    for year1 in $( seq 2022 2023 ) ; do
 
         year2=$(( $year1 + 1  ))
 
         podaac-data-downloader \
             -c $dataset_label \
             -d $output_dir \
-            --start-date ${year1}-11-01T00:00:00Z \
-            --end-date ${year2}-01-10T00:00:00Z \
+            --start-date ${year1}-12-25T00:00:00Z \
+            --end-date ${year2}-01-05T00:00:00Z \
             -b="$spatial_selector"
 
     done

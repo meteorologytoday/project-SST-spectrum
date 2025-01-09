@@ -14,7 +14,7 @@ def findfirst(a):
     return -1
 
 
-dataset_details=dict(
+all_dataset_details=dict(
 
     K10SST_NAVO = dict(
         suffix = "NAVO-L4_GHRSST-SST1m-K10_SST-GLOB-v02.0-fv01.0",
@@ -50,6 +50,17 @@ dataset_details=dict(
 
 )
 
+dataset_details = dict()
+
+for k, v in all_dataset_details.items():
+
+    if k not in ["OSTIA_UKMO",]:
+        continue
+
+    dataset_details[k] = v
+
+    
+
 
 
 input_dir_fmt = "../../data/physical/sst_raw/{dataset:s}"
@@ -58,7 +69,7 @@ input_file_fmt = "{datestr:s}{timestr:s}-{suffix:s}.nc"
 output_dir_fmt = "../../data/physical/{varname:s}/{dataset:s}"
 output_file_fmt = "{dataset:s}_physical_{varname:s}_{year:04d}P{pentad:02d}.nc"
 
-year_rng = [2018, 2023]
+year_rng = [2023, 2024]
 days_per_pentad = 5
 pentads_per_year = 73
 
