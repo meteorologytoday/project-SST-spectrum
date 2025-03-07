@@ -71,8 +71,8 @@ dataset_details = dict()
 
 for k, v in all_dataset_details.items():
 
-    if k not in ["OSTIA_UKMO",]:
-        continue
+    #if k not in ["OSTIA_UKMO",]:
+    #    continue
 
     dataset_details[k] = v
 

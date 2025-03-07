@@ -59,13 +59,13 @@ def work(
 
         for dataset in datasets:
             
-            _da = data_loader.getFilenameFromTimePentad(
-                    dataset = output_dataset,
+            _da = xr.open_dataset(data_loader.getFilenameFromTimePentad(
+                    dataset = dataset,
                     datatype = "cropped",
                     varname = varname,
                     tp = tp,
                     label = label,
-            )[varname]
+            ))[varname]
             
             if da is None:
                 da = _da
@@ -127,6 +127,7 @@ if __name__ == "__main__":
             tp = tp,
             varname = 'sst',
             label = args.label,
+            output_dataset = "GHRSST-Mean",
         )
 
         details["phase"] = "detect"

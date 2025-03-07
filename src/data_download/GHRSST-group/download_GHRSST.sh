@@ -8,7 +8,7 @@ fi
 
 echo "output_root: $output_root"
 
-beg_year=2005
+beg_year=2017
 end_year=2024
 spatial_selector="-180,0,180,90"
 
@@ -17,11 +17,11 @@ echo "##### Download GHRSST data year $beg_year ~ $end_year #####"
 
 dataset_details=(
     OSTIA_UKMO     OSTIA-UKMO-L4-GLOB-v2.0
-#    MUR_JPL        MUR-JPL-L4-GLOB-v4.1
-#    GPBN_OSPO      Geo_Polar_Blended_Night-OSPO-L4-GLOB-v1.0
-#    K10SST_NAVO    K10_SST-NAVO-L4-GLOB-v01
-#    GAMSSA_ABOM    GAMSSA_28km-ABOM-L4-GLOB-v01
-#    DMIOI_DMI      DMI_OI-DMI-L4-GLOB-v1.0
+    GPBN_OSPO      Geo_Polar_Blended_Night-OSPO-L4-GLOB-v1.0
+    K10SST_NAVO    K10_SST-NAVO-L4-GLOB-v01
+    GAMSSA_ABOM    GAMSSA_28km-ABOM-L4-GLOB-v01
+    DMIOI_DMI      DMI_OI-DMI-L4-GLOB-v1.0
+    MUR_JPL        MUR-JPL-L4-GLOB-v4.1
 )
 
 nparams=2
@@ -34,7 +34,7 @@ for i in $( seq 1 $N ) ; do
 
     echo "Downloading dataset: $dataset => $dataset_label"
 
-    output_dir=$output_root/$dataset
+    output_dir=$output_root/physical/sst_raw/$dataset
 
     #for year2 in $( seq 2005 2024 ) ; do
     for year2 in $( seq $beg_year $end_year ) ; do
