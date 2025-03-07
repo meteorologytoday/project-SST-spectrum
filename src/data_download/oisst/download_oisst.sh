@@ -1,10 +1,22 @@
 #!/bin/bash
 
-output_dir=../../data/physical/sst_raw/oisst
 
-mkdir -p $output_dir
+output_dir=$1
 
+if [ "$output_dir" = "" ]; then
+    echo "Error: output_dir must be provided as the first argument."
+fi
+
+echo "output_dir: $output_dir"
+
+beg_year=2005
+end_year=2024
+
+
+echo "##### Download OISST data year $beg_year ~ $end_year #####"
+#mkdir -p $output_dir
 #for datatype in anom mean ; do
+
 for datatype in mean ; do
 for y in $( seq 2005 2024 ) ; do
 

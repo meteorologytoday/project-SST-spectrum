@@ -1,7 +1,19 @@
 #!/bin/bash
 
+output_root=$1
+
+if [ "$output_root" = "" ]; then
+    echo "Error: output_root must be provided as the first argument."
+fi
+
+echo "output_root: $output_root"
+
+beg_year=2005
+end_year=2024
 spatial_selector="-180,0,180,90"
 
+
+echo "##### Download GHRSST data year $beg_year ~ $end_year #####"
 
 dataset_details=(
     OSTIA_UKMO     OSTIA-UKMO-L4-GLOB-v2.0
@@ -22,10 +34,10 @@ for i in $( seq 1 $N ) ; do
 
     echo "Downloading dataset: $dataset => $dataset_label"
 
-    output_dir=../../data/physical/sst_raw/$dataset
+    output_dir=$output_root/$dataset
 
     #for year2 in $( seq 2005 2024 ) ; do
-    for year2 in $( seq 2024 2024 ) ; do
+    for year2 in $( seq $beg_year $end_year ) ; do
 
         year1=$(( $year2 - 1  ))
 

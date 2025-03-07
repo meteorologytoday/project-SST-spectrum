@@ -2,8 +2,9 @@ import numpy as np
 import xarray as xr
 import traceback
 import os
-import pathlib 
+from pathlib import Path
 import pandas as pd
+import argparse
 
 def findfirst(a):
     
@@ -12,6 +13,22 @@ def findfirst(a):
             return i
 
     return -1
+
+
+parser = argparse.ArgumentParser(
+                    prog = 'plot_skill',
+                    description = 'Plot prediction skill of GFS on AR.',
+)
+
+parser.add_argument('--input-root', type=str, help='Input file datasets. ', required=True)
+parser.add_argument('--output-root', type=str, help='Input file datasets. ', required=True)
+parser.add_argument('--year-rng', type=int, nargs=2, help='Year range.', required=True)
+args = parser.parse_args()
+print(args)
+
+
+input_root = Path(args.input_root)
+output_root = Path(args.output_root)
 
 
 all_dataset_details=dict(
@@ -59,17 +76,14 @@ for k, v in all_dataset_details.items():
 
     dataset_details[k] = v
 
-    
 
 
-
-input_dir_fmt = "../../data/physical/sst_raw/{dataset:s}"
 input_file_fmt = "{datestr:s}{timestr:s}-{suffix:s}.nc"
 
-output_dir_fmt = "../../data/physical/{varname:s}/{dataset:s}"
+
 output_file_fmt = "{dataset:s}_physical_{varname:s}_{year:04d}P{pentad:02d}.nc"
 
-year_rng = [2005, 2023]
+year_rng = args.year_rng
 days_per_pentad = 5
 pentads_per_year = 73
 
@@ -87,13 +101,10 @@ for year in range(year_rng[0], year_rng[1]+1):
  
         for varname, new_varname in varnames.items():
 
-            output_dir = output_dir_fmt.format(
-                dataset = dataset,
-                varname=new_varname,
-            )
+            output_dir = output_root / "physical" / new_varname / dataset 
 
             print("Making output folder if not exists: ", output_dir)
-            pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+            output_dir.mkdir(parents=True, exist_ok=True)
                     
             t0 = pd.Timestamp(year=year, month=1, day=1)
             
@@ -125,7 +136,8 @@ for year in range(year_rng[0], year_rng[1]+1):
                         dataset = dataset,
                     )
 
-                    output_full_filename = os.path.join(output_dir, output_filename)
+
+                    output_full_filename = output_dir / output_filename
                     if os.path.exists(output_full_filename):
                         print("File %s already exists. Skip." % (output_full_filename,))
                         continue
@@ -148,7 +160,7 @@ for year in range(year_rng[0], year_rng[1]+1):
 
                     input_full_filenames = []
                     
-                    input_dir = input_dir_fmt.format(dataset=dataset)
+                    input_dir = input_root / "physical" / "sst_raw" / dataset
                     
                     for dt in required_dts:
                         
@@ -159,7 +171,7 @@ for year in range(year_rng[0], year_rng[1]+1):
                             suffix = dataset_detail["suffix"],
                         )
 
-                        input_full_filename = os.path.join(input_dir, input_filename)
+                        input_full_filename = input_dir / input_filename
                         input_full_filenames.append(input_full_filename)
 
                     ds = xr.open_mfdataset(input_full_filenames)
@@ -205,20 +217,3 @@ for year in range(year_rng[0], year_rng[1]+1):
                 except Exception as e:
                     print("Something is wrong with %04dP%02d " % (year, pentad))
                     traceback.print_exc()
-                    
-                    
-                
-
-
-
-
-
-
-
-
-
-
-
-
-
-
