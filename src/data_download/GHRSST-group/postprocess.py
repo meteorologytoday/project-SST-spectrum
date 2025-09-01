@@ -33,11 +33,8 @@ output_root = Path(args.output_root)
 
 all_dataset_details=dict(
 
-    K10SST_NAVO = dict(
-        suffix = "NAVO-L4_GHRSST-SST1m-K10_SST-GLOB-v02.0-fv01.0",
-        timestr = "000000",
-    ),
-   
+
+  
     
     OSTIA_UKMO = dict(
         suffix = "UKMO-L4_GHRSST-SSTfnd-OSTIA-GLOB-v02.0-fv02.0",
@@ -64,7 +61,11 @@ all_dataset_details=dict(
         timestr = "090000",
     ),
 
-
+    K10SST_NAVO = dict(
+        suffix = "NAVO-L4_GHRSST-SST1m-K10_SST-GLOB-v02.0-fv01.0",
+        timestr = "000000",
+    ),
+ 
 )
 
 dataset_details = dict()
@@ -123,7 +124,7 @@ for year in range(year_rng[0], year_rng[1]+1):
 
             
             d = None
-            for pentad in range(Np):
+            for pentad in np.flip(range(Np)):
                 
                 
                 print("Doing %04dP%02d " % (year, pentad))

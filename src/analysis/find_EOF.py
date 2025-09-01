@@ -13,6 +13,8 @@ import sklearn.decomposition
 dask.config.set(**{'array.slicing.split_large_chunks': True})
 
 
+
+
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--dataset-compare', type=str, help='Dataset.', required=True)
 parser.add_argument('--dataset-ref', type=str, help='Dataset.', required=True)
@@ -24,6 +26,7 @@ parser.add_argument('--year-rng', type=int, nargs=2, help="Year range.", require
 parser.add_argument('--mask-file', type=str, help="Mask file. If not supplied, take the whole domain.", default="")
 parser.add_argument('--mask-region', type=str, help="Select the region in the mask file.", default="")
 parser.add_argument('--modes', type=int, help="Mask file. If not supplied, take the whole domain.", required=True)
+parser.add_argument('--mavg-half-window-size', type=int, help="The half size of smoothing window in x and y.", required=True)
 
 args = parser.parse_args()
 print(args)
@@ -63,6 +66,7 @@ def work(
     varname,
     year_rng,
     pentad_rng,
+    mavg_half_window_size,
     mask_file = "",
     mask_region = "",
 ):
@@ -87,22 +91,35 @@ def work(
     print("Datasets opened.")
 
     diff = ds_compare - ds_ref
-    da = diff[varname].transpose(*["pentadstamp", "lat", "lon"])
-   
+    da = diff[varname].transpose("pentadstamp", "lat", "lon")
+  
+    lat = da.coords["lat"].to_numpy() 
+    lon = da.coords["lon"].to_numpy() 
      
     Nt = len(da.coords["pentadstamp"])
-    Nlat = len(da.coords["lat"])
-    Nlon = len(da.coords["lon"])
+    Nlat = len(lat)
+    Nlon = len(lon)
+    dlat = lat[1] - lat[0]
+    dlon = lon[1] - lon[0]
      
     da_mean = da.mean(dim="pentadstamp").rename("mean")
     da_std  = da.std(dim="pentadstamp").rename("std")
     da_anom = da - da_mean
-    
+
+     
     mask = np.isfinite(da.isel(pentadstamp=0).to_numpy()).astype(int)
     if da_mask is not None:
         mask *= da_mask.to_numpy()
 
     missing_data_idx = mask == 0
+    
+    # Now smooth the data
+    for p, pentad in enuerate(da_std.coords["pentadstamp"]):
+        
+        anom = da_anom.isel(pentadstamp=p).to_numpy()
+        filtered_anom = doBoxFilter(anom, half_Nx, half_Ny)
+        da_anom.data[p, :, :] = filtered_anom
+
 
     data_reduction = len(mask) != np.sum(mask)
     
@@ -114,15 +131,12 @@ def work(
     M = matrix_helper.constructSubspaceWith(mask.flatten())
     d_reduced = np.zeros((Nt, np.sum(mask)))
     
-
-   
     print("Reducing the matrix") 
     for t in range(Nt):
         d_reduced[t, :] = M @ d_full[t, :]
     
     pca = sklearn.decomposition.PCA(n_components=args.modes)
     pca.fit(d_reduced)
-
 
     EOFs_reduced = pca.components_
     N_components = EOFs_reduced.shape[0]

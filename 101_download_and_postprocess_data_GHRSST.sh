@@ -13,5 +13,5 @@ echo "# Postprocessing GHRSST"
 python3 ./src/data_download/GHRSST-group/postprocess.py \
     --input-root $raw_data_root             \
     --output-root $postprocessed_data_root  \
-    --year-rng 2022 2024      
+    --year-rng 2023 2023 
 

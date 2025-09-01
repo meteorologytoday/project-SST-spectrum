@@ -10,13 +10,12 @@ label="NPAC_${res_deg}"
 
 datasets=(
     oisst
-#    MUR_JPL
+    MUR_JPL
 #    K10SST_NAVO
     OSTIA_UKMO
-#    DMIOI_DMI
-#    GAMSSA_ABOM
-#    GPBN_OSPO
-
+    DMIOI_DMI
+    GAMSSA_ABOM
+    GPBN_OSPO
 )
 
 
@@ -28,10 +27,10 @@ for y in $( seq 2024 2024 ) ; do
 for dataset in "${datasets[@]}"; do
     
     
-    python3 src/crop_SST.py \
+    python3 src/regrid/crop_SST.py \
         --dataset $dataset \
         --label $label \
-        --timepentad-rng ${y}P-20 ${y}P17 \
+        --timepentad-rng ${y}P-5 ${y}P-3 \
         --lat-rng 0 70    \
         --lon-rng 120 300 \
         --res-deg $res_deg &

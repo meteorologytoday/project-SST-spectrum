@@ -10,6 +10,7 @@ import dask
 import scipy
 import pandas as pd
 import argparse
+from pathlib import Path
 
 import PentadTools as pentt
 import data_loader 
@@ -83,7 +84,7 @@ def work(
         output_dir.mkdir(parents=True, exist_ok=True)
 
         print("Output: ", output_full_filename)
-        new_ds.to_netcdf(
+        da.to_netcdf(
             output_full_filename,
             unlimited_dims="pentadstamp",
         )

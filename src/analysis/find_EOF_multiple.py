@@ -12,6 +12,111 @@ import sklearn.decomposition
 
 dask.config.set(**{'array.slicing.split_large_chunks': True})
 
+def genGaussianKernel(half_Nx, half_Ny, dx, dy, sig_x, sig_y):
+
+    Nx = 2 * half_Nx + 1
+    Ny = 2 * half_Ny + 1
+    
+    x = np.arange(Nx) * dx
+    y = np.arange(Nx) * dy
+
+    x -= x[half_Nx]
+    y -= y[half_Ny]
+    
+    yy, xx = np.meshgrid(y, x, indexing='ij')
+    
+    w = np.exp( - ( ( xx / sig_x )**2 + ( yy / sig_y )**2 / 2 ) )
+
+    w /= np.sum(w)
+    
+    return w
+
+def genBoxKernel(half_Nx, half_Ny, dx=1.0, dy=1.0):
+
+    Nx = 2 * half_Nx + 1
+    Ny = 2 * half_Ny + 1
+    
+    x = np.arange(Nx) * dx
+    y = np.arange(Nx) * dy
+
+    x -= x[half_Nx]
+    y -= y[half_Ny]
+    
+    yy, xx = np.meshgrid(y, x, indexing='ij')
+    
+    w = xx * 0 + 1
+
+    w /= np.sum(w)
+    
+    return w
+
+
+def detectBoundaryForImageAndKernel(n, kn, i):
+    
+    half_n = n // 2
+    half_kn = kn // 2
+    
+    if i < half_kn:
+        img_rng_beg = 0
+        k_rng_beg = half_kn - i
+    else:
+        img_rng_beg = i - half_kn
+        k_rng_beg = 0
+
+
+    if i > n - half_kn - 1:
+        img_rng_end = n
+    else:
+        img_rng_end = i + half_kn + 1
+
+    
+    img_rng = slice(img_rng_beg, img_rng_end)
+    k_rng = slice(k_rng_beg, k_rng_beg + (img_rng_end - img_rng_beg))
+
+    return img_rng, k_rng
+    
+    
+
+def convolve2d(image, kernel):
+   
+    ny, nx = image.shape
+    kny, knx = kernel.shape
+
+    half_kny = kny // 2
+    half_knx = knx // 2
+    
+    new_image = np.zeros_like(image)
+    for j in range(ny):
+
+        y_rng, ky_rng = detectBoundaryForImageAndKernel(ny, kny, j)
+        
+        for i in range(nx):
+            
+            x_rng, kx_rng = detectBoundaryForImageAndKernel(nx, knx, i)
+
+            slice_image = image[y_rng, x_rng]
+            slice_kernel = kernel[ky_rng, kx_rng]
+
+            valid_idx = np.isfinite(slice_image)
+            
+            if np.any(valid_idx):
+                new_image[j, i] = sum( slice_image[valid_idx] * slice_kernel[valid_idx] ) / sum(slice_kernel[valid_idx])
+            else:
+                new_image[j, i] = np.nan
+            
+
+    return new_image
+
+
+def doGaussianFilter(image, half_Nx, half_Ny, dx, dy, sig_x, sig_y):
+    kernel = genGaussianKernel(half_Nx, half_Ny, dx, dy, sig_x, sig_y)
+    return signal.convolve2d(image, kernel, mode="full", fillvalue=0)
+
+def doBoxFilter(image, half_Nx, half_Ny):
+    kernel = genBoxKernel(half_Nx, half_Ny)
+    return convolve2d(image, kernel)
+
+
 
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--datasets', type=str, nargs="+", help='Dataset.', required=True)
@@ -24,6 +129,7 @@ parser.add_argument('--mask-file', type=str, help="Mask file. If not supplied, t
 parser.add_argument('--mask-region', type=str, help="Select the region in the mask file.", default="")
 parser.add_argument('--modes', type=int, help="Mask file. If not supplied, take the whole domain.", required=True)
 parser.add_argument('--decentralize', action="store_true", help="If activated then will perform all possible comparison. ")
+parser.add_argument('--mavg-half-window-size', type=int, help="The half size of smoothing window in x and y.", required=True)
 
 args = parser.parse_args()
 print(args)
@@ -63,6 +169,7 @@ def work(
     varname,
     year_rng,
     pentad_rng,
+    mavg_half_window_size,
     mask_file = "",
     mask_region = "",
 ):
@@ -104,7 +211,7 @@ def work(
         data.append(
             loadData(dataset, label, varname, year_rng, pentad_rng)
         )
-   
+
     ds_ref = data[0]
     Nt = len(ds_ref.coords["pentadstamp"])
     Nlat = len(ds_ref.coords["lat"])
@@ -116,7 +223,17 @@ def work(
     for cnt, (i, j) in enumerate(comparison_pairs):
         diff = data[j] - data[i]
         da_diff = diff[varname].transpose("pentadstamp", "lat", "lon")
-        fulldata[cnt*Nt:(cnt+1)*Nt, :, :] = da_diff
+
+        # Smooth data
+        for p, pentadstamp in enumerate(da_diff.coords["pentadstamp"]):
+            print("Doing pentadstamp: ", pentadstamp)
+            anom = da_diff.isel(pentadstamp=p).to_numpy()
+            filtered_anom = doBoxFilter(anom, mavg_half_window_size, mavg_half_window_size)
+            
+            fulldata[cnt*Nt+p, :, :] = filtered_anom
+            
+
+        #fulldata[cnt*Nt:(cnt+1)*Nt, :, :] = filtered_anom
 
     print("Datasets opened.")
    
@@ -126,6 +243,8 @@ def work(
     
     mask = np.isfinite(fulldata_mean[0, :, :]).astype(int)
     if da_mask is not None:
+        print("mask: ", mask.shape)
+        print("da_mask: ", da_mask.shape)
         mask *= da_mask.to_numpy()
 
     missing_data_idx = mask == 0
@@ -200,9 +319,10 @@ print("Doing EOF of datasets: ", args.datasets)
 output_filename = os.path.join(
     args.output_dir,
     args.label,
-    "EOFs_{datasets:s}_decentralize-{decentralize:s}_{region:s}_{varname:s}_Y{year_beg:04d}-{year_end:04d}_P{pentad_beg:02d}-{pentad_end:02d}.nc".format(
+    "EOFs_{datasets:s}_decentralize-{decentralize:s}_halfsize-{half_size:d}_{region:s}_{varname:s}_Y{year_beg:04d}-{year_end:04d}_P{pentad_beg:02d}-{pentad_end:02d}.nc".format(
         datasets = ",".join(args.datasets),
         decentralize = "T" if args.decentralize else "F",
+        half_size=args.mavg_half_window_size,
         varname = args.varname,
         year_beg = args.year_rng[0],
         year_end = args.year_rng[1],
@@ -225,6 +345,7 @@ else:
         varname = args.varname,
         year_rng = args.year_rng,
         pentad_rng = args.pentad_rng,
+        mavg_half_window_size = args.mavg_half_window_size,
         mask_file = args.mask_file, 
         mask_region = args.mask_region, 
     )
